@@ -1,10 +1,9 @@
 ﻿using UnityEngine;
-using System.Collections;
-using UnityEngine.UI;
 using TMPro;
 
 public class PlayerControl : MonoBehaviour
 {
+    [Header("References")]
     public GameObject GameManagerGO;
     public GameObject PlayerBulletGo;
     public GameObject bulletPosition1;
@@ -12,10 +11,16 @@ public class PlayerControl : MonoBehaviour
     public GameObject ExplosionGO;
     public TextMeshProUGUI LiveUiText;
 
+    [Header("Gameplay Settings")]
+    public float speed = 5f;
     const int Maxlives = 3;
     int lives;
 
-    public float speed;
+    [Header("Audio")]
+    public AudioClip shootClip;       // âm thanh bắn
+    public AudioClip explosionClip;   // âm thanh nổ
+    public AudioSource engineAudio;   // âm thanh động cơ (loop)
+    private AudioSource audioSource;  // để play OneShot (shoot, explosion)
 
     // lưu nửa chiều rộng/chiều cao của sprite
     float halfWidth;
@@ -27,6 +32,9 @@ public class PlayerControl : MonoBehaviour
         SpriteRenderer sr = GetComponent<SpriteRenderer>();
         halfWidth = sr.bounds.extents.x;
         halfHeight = sr.bounds.extents.y;
+
+        // Gắn AudioSource để phát âm thanh bắn/nổ
+        audioSource = GetComponent<AudioSource>();
     }
 
     public void Init()
@@ -46,6 +54,10 @@ public class PlayerControl : MonoBehaviour
 
             GameObject bullet02 = Instantiate(PlayerBulletGo);
             bullet02.transform.position = bulletPosition2.transform.position;
+
+            // Play sound bắn
+            if (shootClip != null)
+                audioSource.PlayOneShot(shootClip);
         }
 
         float x = Input.GetAxisRaw("Horizontal"); // -1(left),0(no input),1(right)
@@ -54,6 +66,18 @@ public class PlayerControl : MonoBehaviour
 
         // gọi function để di chuyển
         Move(direction);
+
+        // Âm thanh động cơ: khi có input thì bật, không thì tắt
+        if (direction.magnitude > 0.1f)
+        {
+            if (!engineAudio.isPlaying)
+                engineAudio.Play();
+        }
+        else
+        {
+            if (engineAudio.isPlaying)
+                engineAudio.Stop();
+        }
     }
 
     void Move(Vector2 direction)
@@ -97,7 +121,6 @@ public class PlayerControl : MonoBehaviour
                 GameManagerGO.GetComponent<GameManager>()
                              .SetGameManagerState(GameManager.GameManagerState.GameOver);
 
-                // Destroy(gameObject);
                 gameObject.SetActive(false);
             }
         }
@@ -107,5 +130,9 @@ public class PlayerControl : MonoBehaviour
     {
         GameObject explo = Instantiate(ExplosionGO);
         explo.transform.position = transform.position;
+
+        // Phát âm thanh nổ tại vị trí hiện tại của player
+        if (explosionClip != null)
+            AudioSource.PlayClipAtPoint(explosionClip, transform.position);
     }
 }
