@@ -13,20 +13,18 @@ public class PlayerControl : MonoBehaviour
 
     [Header("Gameplay Settings")]
     public float speed = 5f;
-    const int Maxlives = 3;
+    const int Maxlives = 4;   // 👉 số mạng tối đa = 4
     int lives;
 
     [Header("Audio")]
     public AudioClip shootClip;
     public AudioClip explosionClip;
     public AudioSource engineAudio;
-    private AudioSource audioSource;
 
     float halfWidth;
     float halfHeight;
 
-    private bool infiniteLives = false;
-    private int savedLives;
+    private bool isImmortal = false; // 👉 chế độ bất tử
 
     void Start()
     {
@@ -34,25 +32,35 @@ public class PlayerControl : MonoBehaviour
         halfWidth = sr.bounds.extents.x;
         halfHeight = sr.bounds.extents.y;
 
-        audioSource = GetComponent<AudioSource>();
+        if (engineAudio == null)
+        {
+            engineAudio = GetComponent<AudioSource>();
+            if (engineAudio == null)
+            {
+                engineAudio = gameObject.AddComponent<AudioSource>();
+                engineAudio.loop = true;
+            }
+        }
     }
 
     public void Init()
     {
         lives = Maxlives;
-        LiveUiText.text = lives.ToString();
+        UpdateLivesUI();           
         gameObject.SetActive(true);
+        isImmortal = false; // reset về bình thường khi game bắt đầu lại
     }
 
     void Update()
     {
-        // Toggle infinite lives with L key
+        // 👉 Toggle bất tử khi bấm L
         if (Input.GetKeyDown(KeyCode.L))
         {
-            HandleInfiniteLivesToggle();
+            isImmortal = !isImmortal;
+            Debug.Log("🛡️ Bất tử: " + isImmortal);
         }
 
-        // Fire bullet when the spacebar is pressed
+        // Bắn đạn
         if (Input.GetKeyDown(KeyCode.Space))
         {
             GameObject bullet01 = Instantiate(PlayerBulletGo);
@@ -62,25 +70,26 @@ public class PlayerControl : MonoBehaviour
             bullet02.transform.position = bulletPosition2.transform.position;
 
             if (shootClip != null)
-                audioSource.PlayOneShot(shootClip);
+                SoundManager.Instance.PlaySound(shootClip);
         }
 
+        // Di chuyển
         float x = Input.GetAxisRaw("Horizontal");
         float y = Input.GetAxisRaw("Vertical");
         Vector2 direction = new Vector2(x, y).normalized;
 
         Move(direction);
 
-        // Engine audio: play when moving, stop when idle
-        if (direction.magnitude > 0.1f)
+        if (engineAudio != null)
         {
-            if (!engineAudio.isPlaying)
-                engineAudio.Play();
-        }
-        else
-        {
-            if (engineAudio.isPlaying)
-                engineAudio.Stop();
+            if (Mathf.Abs(y) > 0.1f)
+            {
+                if (!engineAudio.isPlaying) engineAudio.Play();
+            }
+            else
+            {
+                if (engineAudio.isPlaying) engineAudio.Stop();
+            }
         }
     }
 
@@ -96,7 +105,6 @@ public class PlayerControl : MonoBehaviour
 
         Vector2 pos = transform.position;
         pos += direction * speed * Time.deltaTime;
-
         pos.x = Mathf.Clamp(pos.x, min.x, max.x);
         pos.y = Mathf.Clamp(pos.y, min.y, max.y);
 
@@ -105,17 +113,18 @@ public class PlayerControl : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (infiniteLives)
-        {
-            PlayExplosion();
-            return;
-        }
+        if (isImmortal) return; // 👉 khi bất tử thì bỏ qua va chạm
 
         if ((collision.tag == "EnemyShipTag") || (collision.tag == "EnemyBulletTag"))
         {
             PlayExplosion();
             lives--;
-            LiveUiText.text = lives.ToString();
+            UpdateLivesUI();
+
+            if (collision.tag == "EnemyShipTag")
+            {
+                Destroy(collision.gameObject);
+            }
 
             if (lives == 0)
             {
@@ -133,20 +142,15 @@ public class PlayerControl : MonoBehaviour
         explo.transform.position = transform.position;
 
         if (explosionClip != null)
-            AudioSource.PlayClipAtPoint(explosionClip, transform.position);
+            SoundManager.Instance.PlaySound(explosionClip);
     }
 
-    private void HandleInfiniteLivesToggle()
+    void UpdateLivesUI()
     {
-        infiniteLives = !infiniteLives;
-
-        if (infiniteLives)
+        if (LiveUiText != null)
         {
-            savedLives = lives;
-        }
-        else
-        {
-            lives = savedLives;
+            // 👉 chỉ hiển thị số mạng còn lại
+            LiveUiText.text = lives.ToString();
         }
     }
 }
