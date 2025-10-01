@@ -17,23 +17,23 @@ public class PlayerControl : MonoBehaviour
     int lives;
 
     [Header("Audio")]
-    public AudioClip shootClip;       // âm thanh bắn
-    public AudioClip explosionClip;   // âm thanh nổ
-    public AudioSource engineAudio;   // âm thanh động cơ (loop)
-    private AudioSource audioSource;  // để play OneShot (shoot, explosion)
+    public AudioClip shootClip;
+    public AudioClip explosionClip;
+    public AudioSource engineAudio;
+    private AudioSource audioSource;
 
-    // lưu nửa chiều rộng/chiều cao của sprite
     float halfWidth;
     float halfHeight;
 
+    private bool infiniteLives = false;
+    private int savedLives;
+
     void Start()
     {
-        // Lấy sprite renderer để tính nửa kích thước player
         SpriteRenderer sr = GetComponent<SpriteRenderer>();
         halfWidth = sr.bounds.extents.x;
         halfHeight = sr.bounds.extents.y;
 
-        // Gắn AudioSource để phát âm thanh bắn/nổ
         audioSource = GetComponent<AudioSource>();
     }
 
@@ -46,7 +46,13 @@ public class PlayerControl : MonoBehaviour
 
     void Update()
     {
-        // fire bullet when the spacebar is press
+        // Toggle infinite lives with L key
+        if (Input.GetKeyDown(KeyCode.L))
+        {
+            HandleInfiniteLivesToggle();
+        }
+
+        // Fire bullet when the spacebar is pressed
         if (Input.GetKeyDown(KeyCode.Space))
         {
             GameObject bullet01 = Instantiate(PlayerBulletGo);
@@ -55,19 +61,17 @@ public class PlayerControl : MonoBehaviour
             GameObject bullet02 = Instantiate(PlayerBulletGo);
             bullet02.transform.position = bulletPosition2.transform.position;
 
-            // Play sound bắn
             if (shootClip != null)
                 audioSource.PlayOneShot(shootClip);
         }
 
-        float x = Input.GetAxisRaw("Horizontal"); // -1(left),0(no input),1(right)
-        float y = Input.GetAxisRaw("Vertical");   // -1(down),0(no input),1(up)
+        float x = Input.GetAxisRaw("Horizontal");
+        float y = Input.GetAxisRaw("Vertical");
         Vector2 direction = new Vector2(x, y).normalized;
 
-        // gọi function để di chuyển
         Move(direction);
 
-        // Âm thanh động cơ: khi có input thì bật, không thì tắt
+        // Engine audio: play when moving, stop when idle
         if (direction.magnitude > 0.1f)
         {
             if (!engineAudio.isPlaying)
@@ -82,34 +86,31 @@ public class PlayerControl : MonoBehaviour
 
     void Move(Vector2 direction)
     {
-        // điểm dưới cùng bên trái (viewport 0,0)
         Vector2 min = Camera.main.ViewportToWorldPoint(new Vector2(0, 0));
-        // điểm trên cùng bên phải (viewport 1,1)
         Vector2 max = Camera.main.ViewportToWorldPoint(new Vector2(1, 1));
 
-        // Giới hạn lại theo kích thước sprite
         min.x += halfWidth;
         max.x -= halfWidth;
-
         min.y += halfHeight;
         max.y -= halfHeight;
 
-        // Lấy vị trí hiện tại
         Vector2 pos = transform.position;
-
-        // Tính toán vị trí mới
         pos += direction * speed * Time.deltaTime;
 
-        // Clamp lại để không ra khỏi màn hình
         pos.x = Mathf.Clamp(pos.x, min.x, max.x);
         pos.y = Mathf.Clamp(pos.y, min.y, max.y);
 
-        // Cập nhật vị trí
         transform.position = pos;
     }
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
+        if (infiniteLives)
+        {
+            PlayExplosion();
+            return;
+        }
+
         if ((collision.tag == "EnemyShipTag") || (collision.tag == "EnemyBulletTag"))
         {
             PlayExplosion();
@@ -131,8 +132,21 @@ public class PlayerControl : MonoBehaviour
         GameObject explo = Instantiate(ExplosionGO);
         explo.transform.position = transform.position;
 
-        // Phát âm thanh nổ tại vị trí hiện tại của player
         if (explosionClip != null)
             AudioSource.PlayClipAtPoint(explosionClip, transform.position);
+    }
+
+    private void HandleInfiniteLivesToggle()
+    {
+        infiniteLives = !infiniteLives;
+
+        if (infiniteLives)
+        {
+            savedLives = lives;
+        }
+        else
+        {
+            lives = savedLives;
+        }
     }
 }
