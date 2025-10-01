@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 8097486010982637630}
   - component: {fileID: 6823209587669024542}
   - component: {fileID: -6454397134135029498}
+  - component: {fileID: 8668678237615135054}
   m_Layer: 0
   m_Name: PlayerBulletGO
   m_TagString: PlayerBulletTag
@@ -82,7 +83,8 @@ SpriteRenderer:
   m_SortingLayerID: 0
   m_SortingLayer: 0
   m_SortingOrder: 0
-  m_Sprite: {fileID: 8848993070067138329, guid: 3a5d91f9b4a749a4d96cfd59c5f9f253, type: 3}
+  m_Sprite: {fileID: 8848993070067138329, guid: 3a5d91f9b4a749a4d96cfd59c5f9f253,
+    type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -105,6 +107,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 41296eb12c9c91445943fcc2566b9ef7, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::NewMonoBehaviourScript
+  ExplosionGO: {fileID: 0}
 --- !u!50 &6823209587669024542
 Rigidbody2D:
   serializedVersion: 5
@@ -178,3 +181,17 @@ BoxCollider2D:
   m_AutoTiling: 0
   m_Size: {x: 0.09, y: 0.24}
   m_EdgeRadius: 0
+--- !u!114 &8668678237615135054
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4968691479504583517}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 41296eb12c9c91445943fcc2566b9ef7, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::PlayerBullet
+  ExplosionGO: {fileID: 2410140925837762320, guid: 3ebad4eb0f29b04489e9a015ce043ede,
+    type: 3}
