@@ -1,4 +1,5 @@
 ﻿using UnityEngine;
+using System.Collections;
 
 public class GameManager : MonoBehaviour
 {
@@ -31,6 +32,9 @@ public class GameManager : MonoBehaviour
 
     void UpdateGame()
     {
+        // 🔎 Lấy tham chiếu tới TimeCounter
+        TimeCounter timeCounter = FindObjectOfType<TimeCounter>();
+
         switch (GM)
         {
             case GameManagerState.Opening:
@@ -47,7 +51,13 @@ public class GameManager : MonoBehaviour
                     nhomImage.SetActive(true);
 
                 if (gameplayLogo != null)
-                    gameplayLogo.SetActive(false); // 👉 logo gameplay chưa hiện
+                    gameplayLogo.SetActive(false);
+
+                Time.timeScale = 1f; // 👉 reset thời gian
+
+                // 🕒 Khi quay về Opening, dừng đồng hồ (phòng trường hợp vẫn còn chạy)
+                if (timeCounter != null)
+                    timeCounter.StopTimer();
                 break;
 
             case GameManagerState.Gameplay:
@@ -64,7 +74,7 @@ public class GameManager : MonoBehaviour
                     nhomImage.SetActive(false);
 
                 if (gameplayLogo != null)
-                    gameplayLogo.SetActive(true); // 👉 hiện logo khi gameplay
+                    gameplayLogo.SetActive(true);
 
                 if (playerShip != null)
                     playerShip.GetComponent<PlayerControl>().Init();
@@ -73,7 +83,13 @@ public class GameManager : MonoBehaviour
                     enemySpawner.GetComponent<EnemySpawner>().ScheduleEnemySpawn();
 
                 if (gameScore != null)
-                    gameScore.ResetScore(); // reset điểm khi bắt đầu ván mới
+                    gameScore.ResetScore();
+
+                Time.timeScale = 1f; // 👉 gameplay chạy bình thường
+
+                // 🟢 Khi bắt đầu gameplay: reset + chạy lại đồng hồ
+                if (timeCounter != null)
+                    timeCounter.StartTimer();
                 break;
 
             case GameManagerState.GameOver:
@@ -84,7 +100,11 @@ public class GameManager : MonoBehaviour
                     GameOverGo.SetActive(true);
 
                 if (gameplayLogo != null)
-                    gameplayLogo.SetActive(false); // 👉 tắt logo gameplay khi game over
+                    gameplayLogo.SetActive(false);
+
+                // 🛑 Khi GameOver: dừng đồng hồ
+                if (timeCounter != null)
+                    timeCounter.StopTimer();
 
                 // 👉 Lưu HighScore
                 if (GameHIghScore.Instance != null && GameScore.Instance != null)
@@ -92,10 +112,19 @@ public class GameManager : MonoBehaviour
                     GameHIghScore.Instance.TrySaveHighScore(GameScore.Instance.GetCurrentScore());
                 }
 
-                // Sau 3 giây quay về Opening để hiện lại Title + Nhóm
-                Invoke("ChangeToOpeningState", 3f);
+                // 👉 Dừng toàn bộ gameplay
+                Time.timeScale = 0f;
+
+                // 👉 Đếm 3 giây theo thời gian thực
+                StartCoroutine(WaitToReturnOpening());
                 break;
         }
+    }
+
+    IEnumerator WaitToReturnOpening()
+    {
+        yield return new WaitForSecondsRealtime(3f); // ⏳ đợi 3s ngoài timeScale
+        ChangeToOpeningState();
     }
 
     public void SetGameManagerState(GameManagerState state)
@@ -121,7 +150,9 @@ public class GameManager : MonoBehaviour
             nhomImage.SetActive(true);
 
         if (gameplayLogo != null)
-            gameplayLogo.SetActive(false); // 👉 ẩn logo gameplay khi quay lại Opening
+            gameplayLogo.SetActive(false);
+
+        Time.timeScale = 1f; // 👉 reset lại thời gian khi quay về Opening
 
         SetGameManagerState(GameManagerState.Opening);
     }
