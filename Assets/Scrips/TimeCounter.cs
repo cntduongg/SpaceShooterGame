@@ -4,44 +4,45 @@ using TMPro;
 public class TimeCounter : MonoBehaviour
 {
     [Header("UI hiển thị thời gian")]
-    public TextMeshProUGUI timeText;   // Gán vào Text UI trên Canvas trong Inspector
+    public TextMeshProUGUI timeText;   // Gán TextMeshPro vào đây trong Inspector
 
-    private float elapsedTime = 0f;     // Tổng thời gian đã trôi qua (giây)
-    private bool isCounting = false;    // Kiểm soát có đếm hay không
+    private float elapsedTime = 0f;
+    private bool isCounting = false;
 
     void Start()
     {
-        ResetTimer();       // Bắt đầu từ 0
-        StartTimer();       // Tự động bắt đầu khi game chạy
+        // ✅ Khi game bắt đầu (nhấn Play), tự động reset và chạy
+        ResetTimer();
+        StartTimer();
     }
 
     void Update()
     {
-        if (isCounting)
-        {
-            elapsedTime += Time.deltaTime;
+        if (!isCounting) return;
 
-            int minutes = Mathf.FloorToInt(elapsedTime / 60);
-            int seconds = Mathf.FloorToInt(elapsedTime % 60);
+        elapsedTime += Time.deltaTime;
 
-            if (timeText != null)
-                timeText.text = $"{minutes:00}:{seconds:00}";
-        }
+        int minutes = Mathf.FloorToInt(elapsedTime / 60f);
+        int seconds = Mathf.FloorToInt(elapsedTime % 60f);
+
+        if (timeText != null)
+            timeText.text = $"{minutes:00}:{seconds:00}";
     }
 
-    // 👉 Bắt đầu đếm
+    // 👉 Gọi khi muốn reset và bắt đầu lại đồng hồ
     public void StartTimer()
     {
+        elapsedTime = 0f;
         isCounting = true;
     }
 
-    // 👉 Tạm dừng đếm
+    // 👉 Gọi khi GameOver để dừng đồng hồ
     public void StopTimer()
     {
         isCounting = false;
     }
 
-    // 👉 Reset về 0
+    // 👉 Reset hiển thị về 00:00
     public void ResetTimer()
     {
         elapsedTime = 0f;
@@ -49,9 +50,9 @@ public class TimeCounter : MonoBehaviour
             timeText.text = "00:00";
     }
 
-    // 👉 Lấy tổng thời gian (giây)
     public float GetElapsedTime()
     {
         return elapsedTime;
     }
 }
+
