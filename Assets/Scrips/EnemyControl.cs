@@ -13,12 +13,14 @@ public class EnemyControl : MonoBehaviour
 
     void Update()
     {
-        if (isDead) return; // Dừng di chuyển nếu đã chết
+        if (isDead) return; // Dừng nếu enemy đã bị bắn chết
 
+        // Enemy di chuyển xuống
         Vector2 position = transform.position;
         position = new Vector2(position.x, position.y - speed * Time.deltaTime);
         transform.position = position;
 
+        // Nếu rơi khỏi màn hình thì tự hủy
         Vector2 min = Camera.main.ViewportToWorldPoint(new Vector2(0, 0));
         if (transform.position.y < min.y)
         {
@@ -28,45 +30,45 @@ public class EnemyControl : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D collision)
     {
-        if (isDead) return; // Tránh xử lý nhiều lần
+        if (isDead) return; // tránh xử lý nhiều lần
 
-        if ((collision.tag == "PlayerShip") || (collision.tag == "PlayerBullletTag"))
+        // Enemy bị đạn Player bắn trúng
+        if (collision.CompareTag("PlayerBulletTag"))
         {
             isDead = true;
-            Debug.Log("💥 Enemy bị bắn trúng!");
 
-            // Tắt mọi thành phần hiển thị và tương tác
+            // Hủy đạn Player
+            Destroy(collision.gameObject);
+
+            // Vô hiệu hóa enemy
             GetComponent<SpriteRenderer>().enabled = false;
             GetComponent<Collider2D>().enabled = false;
 
-            // Dừng mọi chuyển động
+            // Dừng Rigidbody nếu có
             if (GetComponent<Rigidbody2D>() != null)
                 GetComponent<Rigidbody2D>().linearVelocity = Vector2.zero;
 
+            // Hiệu ứng nổ
             PlayExplo();
-            Destroy(gameObject, 1f); // Hủy sau 1 giây
+
+            // ➕ Cộng điểm
+            if (GameScore.Instance != null)
+                GameScore.Instance.AddScore(100);
+
+            // Hủy enemy sau 1 giây (chờ explosion)
+            Destroy(gameObject, 1f);
         }
     }
 
     void PlayExplo()
     {
-        Debug.Log("🔍 Bắt đầu PlayExplo");
-
         if (ExplosionGO == null)
         {
-            Debug.LogError("❌ ExplosionGO là NULL!");
+            Debug.LogError("❌ ExplosionGO chưa được gán!");
             return;
         }
 
         GameObject exp = Instantiate(ExplosionGO);
-        Debug.Log($"✅ Đã Instantiate explosion: {exp.name}");
-
         exp.transform.position = transform.position;
-        Debug.Log($"📍 Vị trí explosion: {exp.transform.position}");
-
-        // Kiểm tra component
-        SpriteRenderer sr = exp.GetComponent<SpriteRenderer>();
-        if (sr != null) Debug.Log("✅ Explosion có SpriteRenderer");
-        else Debug.Log("❌ Explosion không có SpriteRenderer");
     }
 }

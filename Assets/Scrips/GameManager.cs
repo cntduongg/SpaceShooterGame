@@ -2,9 +2,17 @@
 
 public class GameManager : MonoBehaviour
 {
+    [Header("UI References")]
     public GameObject playButton;
+    public GameObject GameOverGo;
+    public GameObject titleImage;    // 👉 hình Title
+    public GameObject nhomImage;     // 👉 hình Nhóm (credits)
+
+    [Header("Gameplay References")]
     public GameObject playerShip;
     public GameObject enemySpawner;
+    public GameScore gameScore;      // quản lý điểm hiện tại
+    public GameObject gameplayLogo;  // 👉 logo hiển thị trong Gameplay
 
     public enum GameManagerState
     {
@@ -12,88 +20,109 @@ public class GameManager : MonoBehaviour
         Gameplay,
         GameOver,
     }
-    GameManagerState GM;
+
+    private GameManagerState GM;
 
     void Start()
     {
         GM = GameManagerState.Opening;
-        Debug.Log("🟢 GameManager Start được gọi");
         UpdateGame();
     }
 
     void UpdateGame()
     {
-        Debug.Log($"🔄 Chuyển sang state: {GM}");
-
         switch (GM)
         {
             case GameManagerState.Opening:
-                Debug.Log("📋 Opening State");
                 if (playButton != null)
-                {
                     playButton.SetActive(true);
-                    Debug.Log("✅ Hiển thị Play button");
-                }
-                else
-                {
-                    Debug.LogError("❌ PlayButton không được gán!");
-                }
+
+                if (GameOverGo != null)
+                    GameOverGo.SetActive(false);
+
+                if (titleImage != null)
+                    titleImage.SetActive(true);
+
+                if (nhomImage != null)
+                    nhomImage.SetActive(true);
+
+                if (gameplayLogo != null)
+                    gameplayLogo.SetActive(false); // 👉 logo gameplay chưa hiện
                 break;
 
             case GameManagerState.Gameplay:
-                Debug.Log("🎮 Gameplay State - Bắt đầu game");
                 if (playButton != null)
-                {
                     playButton.SetActive(false);
-                    Debug.Log("✅ Ẩn Play button");
-                }
+
+                if (GameOverGo != null)
+                    GameOverGo.SetActive(false);
+
+                if (titleImage != null)
+                    titleImage.SetActive(false);
+
+                if (nhomImage != null)
+                    nhomImage.SetActive(false);
+
+                if (gameplayLogo != null)
+                    gameplayLogo.SetActive(true); // 👉 hiện logo khi gameplay
 
                 if (playerShip != null)
-                {
                     playerShip.GetComponent<PlayerControl>().Init();
-                    Debug.Log("✅ Khởi tạo Player");
-                }
-                else
-                {
-                    Debug.LogError("❌ PlayerShip không được gán!");
-                }
 
                 if (enemySpawner != null)
-                {
-                    Debug.Log("✅ Gọi ScheduleEnemySpawn");
                     enemySpawner.GetComponent<EnemySpawner>().ScheduleEnemySpawn();
-                }
-                else
-                {
-                    Debug.LogError("❌ EnemySpawner không được gán!");
-                }
+
+                if (gameScore != null)
+                    gameScore.ResetScore(); // reset điểm khi bắt đầu ván mới
                 break;
 
             case GameManagerState.GameOver:
-                Debug.Log("💀 GameOver State");
                 if (enemySpawner != null)
                     enemySpawner.GetComponent<EnemySpawner>().UnscheduEnemySpawnder();
-                Invoke("ChangeToOpeningState", 8f);
+
+                if (GameOverGo != null)
+                    GameOverGo.SetActive(true);
+
+                if (gameplayLogo != null)
+                    gameplayLogo.SetActive(false); // 👉 tắt logo gameplay khi game over
+
+                // 👉 Lưu HighScore
+                if (GameHIghScore.Instance != null && GameScore.Instance != null)
+                {
+                    GameHIghScore.Instance.TrySaveHighScore(GameScore.Instance.GetCurrentScore());
+                }
+
+                // Sau 3 giây quay về Opening để hiện lại Title + Nhóm
+                Invoke("ChangeToOpeningState", 3f);
                 break;
         }
     }
 
     public void SetGameManagerState(GameManagerState state)
     {
-        Debug.Log($"🎯 SetGameManagerState: {state}");
         GM = state;
         UpdateGame();
     }
 
     public void StartGamePlay()
     {
-        Debug.Log("🎮 StartGamePlay được gọi từ Play button");
         SetGameManagerState(GameManagerState.Gameplay);
     }
 
     public void ChangeToOpeningState()
     {
-        Debug.Log("🔙 Quay về Opening State");
+        if (GameOverGo != null)
+            GameOverGo.SetActive(false);
+
+        if (titleImage != null)
+            titleImage.SetActive(true);
+
+        if (nhomImage != null)
+            nhomImage.SetActive(true);
+
+        if (gameplayLogo != null)
+            gameplayLogo.SetActive(false); // 👉 ẩn logo gameplay khi quay lại Opening
+
         SetGameManagerState(GameManagerState.Opening);
     }
 }
